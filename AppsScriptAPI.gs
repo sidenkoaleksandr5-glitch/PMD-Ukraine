@@ -15,13 +15,9 @@
  */
 function doGet() {
 
-  const html = HtmlService.getResource('index.html')
-    .getContent();
+  const html = HtmlService.createHtmlOutputFromFile('index.html');
 
-  return HtmlService.createHtmlOutput(html)
-    .setWidth(100)
-    .setHeight(100)
-    .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  return html;
 
 }
 
@@ -101,7 +97,33 @@ function handleAddWork(data) {
 
   try {
 
-    const id = WorksModule.createWork(data);
+    // Конвертуємо дату
+    const dateValue = new Date(data.date);
+
+    const work = {
+      date: dateValue,
+      requestNumber: data.requestNumber,
+      district: data.district,
+      community: data.community,
+      locality: data.locality,
+      address: data.address,
+      workType: data.workType,
+      category: data.category,
+      area: parseFloat(data.area) || 0,
+      found: parseInt(data.found) || 0,
+      transferred: parseInt(data.transferred) || 0,
+      destroyed: parseInt(data.destroyed) || 0,
+      workAct: data.workAct || '',
+      explosive: data.explosive || '',
+      explosiveQty: parseFloat(data.explosiveQty) || 0,
+      initiator: data.initiator || '',
+      initiatorQty: parseInt(data.initiatorQty) || 0,
+      writeOffAct: data.writeOffAct || '',
+      team: data.team || '',
+      leader: data.leader
+    };
+
+    const id = WorksRepository.insert(work);
 
     return {
       success: true,
@@ -110,6 +132,8 @@ function handleAddWork(data) {
     };
 
   } catch (error) {
+
+    Logger.log('Помилка при додаванні: ' + error.message);
 
     return {
       success: false,
@@ -127,9 +151,9 @@ function handleGetWorks() {
 
   try {
 
-    const works = WorksModule.getAllWorks();
+    const works = WorksRepository.all();
 
-    const formatted = works.map((row, index) => ({
+    const formatted = works.map((row) => ({
 
       id: row[0],
       date: row[1] instanceof Date ? Utilities.formatDate(row[1], Session.getScriptTimeZone(), 'yyyy-MM-dd') : row[1],
@@ -165,9 +189,12 @@ function handleGetWorks() {
 
   } catch (error) {
 
+    Logger.log('Помилка при отриманні: ' + error.message);
+
     return {
       success: false,
-      message: error.message
+      message: error.message,
+      data: []
     };
 
   }
@@ -223,6 +250,8 @@ function handleGetWork(id) {
 
   } catch (error) {
 
+    Logger.log('Помилка при отриманні роботи: ' + error.message);
+
     return {
       success: false,
       message: error.message
@@ -248,13 +277,14 @@ function handleUpdateWork(data) {
       };
     }
 
-    // Оновлення потрібно реалізувати окремо
     return {
       success: false,
       message: 'Функція редагування буде реалізована у Build 002.4.0'
     };
 
   } catch (error) {
+
+    Logger.log('Помилка при оновленні: ' + error.message);
 
     return {
       success: false,
@@ -288,6 +318,8 @@ function handleDeleteWork(id) {
 
   } catch (error) {
 
+    Logger.log('Помилка при видаленні: ' + error.message);
+
     return {
       success: false,
       message: error.message
@@ -314,6 +346,8 @@ function handleExportExcel(data) {
 
   } catch (error) {
 
+    Logger.log('Помилка при експорті: ' + error.message);
+
     return {
       success: false,
       message: error.message
@@ -330,9 +364,9 @@ function handleGetStats() {
 
   try {
 
-    const count = WorksModule.countWorks();
+    const count = WorksRepository.count();
 
-    const works = WorksModule.getAllWorks();
+    const works = WorksRepository.all();
 
     let totalArea = 0;
     let totalFound = 0;
@@ -366,9 +400,12 @@ function handleGetStats() {
 
   } catch (error) {
 
+    Logger.log('Помилка при отриманні статистики: ' + error.message);
+
     return {
       success: false,
-      message: error.message
+      message: error.message,
+      data: {}
     };
 
   }
